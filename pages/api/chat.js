@@ -1,46 +1,32 @@
+import { OpenAI } from "openai";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  if (!process.env.GOOGLE_GEMINI_API_KEY) {
-    return res.status(500).json({ error: "Clave de API no configurada en Vercel" });
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ error: "API Key no configurada" });
   }
 
   try {
     const { message } = req.body;
+    if (!message) return res.status(400).json({ error: "Mensaje vacío" });
 
-    if (!message || message.trim() === "") {
-      return res.status(400).json({ error: "Mensaje vacío" });
-    }
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
-    const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
-
-    // Forzar a Gemini a responder en LaTeX
-    const prompt = `
-      Responde siempre en formato LaTeX. Si hay fórmulas matemáticas, envíalas en LaTeX dentro de delimitadores de bloques ($$...$$).
-      Aquí está la pregunta del usuario:
-      ${message}
-    `;
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }]
-      }),
+    const response = await openai.chat.completions.create({
+      model: "gpt-4-turbo",
+      messages: [
+        { role: "system", content: "Eres un tutor de matemáticas. Siempre que respondas con ecuaciones, usa formato LaTeX dentro de delimitadores `$$ ... $$` para ecuaciones en bloque y `$ ... $` para ecuaciones en línea." },
+        { role: "user", content: message }
+      ],
+      temperature: 0.7,
     });
 
-    const data = await response.json();
-
-    if (!data || !data.candidates || data.candidates.length === 0) {
-      return res.status(500).json({ error: "No se recibió respuesta de Gemini" });
-    }
-
-    return res.status(200).json({ response: data.candidates[0].content.parts[0].text });
+    res.status(200).json({ response: response.choices[0].message.content });
   } catch (error) {
-    console.error("Error en la API de Gemini:", error);
-    return res.status(500).json({ error: "Error al obtener respuesta de Gemini" });
+    console.error("Error en OpenAI:", error);
+    res.status(500).json({ error: "Error en la API de OpenAI" });
   }
 }
