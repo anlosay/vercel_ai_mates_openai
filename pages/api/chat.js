@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo",
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: "Eres un tutor de matemáticas. Siempre que respondas con ecuaciones, usa formato LaTeX dentro de delimitadores `$$ ... $$` para ecuaciones en bloque y `$ ... $` para ecuaciones en línea." },
         { role: "user", content: message }
