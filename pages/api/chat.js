@@ -17,11 +17,18 @@ export default async function handler(req, res) {
     const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
     const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
 
+    // Forzar a Gemini a responder en LaTeX
+    const prompt = `
+      Responde siempre en formato LaTeX. Si hay fórmulas matemáticas, envíalas en LaTeX dentro de delimitadores de bloques ($$...$$).
+      Aquí está la pregunta del usuario:
+      ${message}
+    `;
+
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: message }] }]
+        contents: [{ role: "user", parts: [{ text: prompt }] }]
       }),
     });
 
