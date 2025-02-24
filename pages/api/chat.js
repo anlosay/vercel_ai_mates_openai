@@ -1,11 +1,9 @@
-import { OpenAI } from "openai";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.GOOGLE_GEMINI_API_KEY) {
     return res.status(500).json({ error: "Clave de API no configurada en Vercel" });
   }
 
@@ -16,22 +14,26 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Mensaje vacío" });
     }
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
+    const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "system", content: "Eres un asistente útil." }, { role: "user", content: message }],
-      temperature: 0.7,
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: message }] }]
+      }),
     });
 
-    if (!response.choices || response.choices.length === 0) {
-      return res.status(500).json({ error: "OpenAI no devolvió respuesta" });
+    const data = await response.json();
+
+    if (!data || !data.candidates || data.candidates.length === 0) {
+      return res.status(500).json({ error: "No se recibió respuesta de Gemini" });
     }
 
-    return res.status(200).json({ response: response.choices[0].message.content });
+    return res.status(200).json({ response: data.candidates[0].content.parts[0].text });
   } catch (error) {
-    console.error("Error en OpenAI:", error);
-    return res.status(500).json({ error: "Error al obtener respuesta de OpenAI" });
+    console.error("Error en la API de Gemini:", error);
+    return res.status(500).json({ error: "Error al obtener respuesta de Gemini" });
   }
 }
-
