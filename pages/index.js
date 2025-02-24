@@ -1,8 +1,4 @@
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
 
 export default function Home() {
   const [input, setInput] = useState("");
@@ -31,13 +27,11 @@ export default function Home() {
 
   return (
     <div className="container">
-      <h1>Chatbot GPT</h1>
+      <h1>Chatbot Gemini</h1>
       <div className="chat-box">
         {messages.map((msg, index) => (
           <div key={index} className={msg.role === "user" ? "user-message" : "bot-message"}>
-            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-              {msg.content}
-            </ReactMarkdown>
+            {msg.content}
           </div>
         ))}
       </div>
